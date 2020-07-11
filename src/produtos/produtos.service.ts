@@ -1,36 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { Produto } from './produto.model';
+import { InjectModel } from '@nestjs/sequelize';
 
 @Injectable()
 export class ProdutosService {
-    private produtos: Produto[] = [];
-
-    constructor() {
-        this.produtos.push({ id: 1, codigo: 'CNTAZ', nome: 'Caneta Azul', preco: 1.99 });
-        this.produtos.push({ id: 2, codigo: 'CNTPR', nome: 'Caneta Preta', preco: 2.99 });
-    }
+    constructor(
+        @InjectModel(Produto)
+        private produtoModel: typeof Produto
+    ) { }
 
     async buscaTodos(): Promise<Produto[]> {
-        return this.produtos;
+        return this.produtoModel.findAll();
     }
 
     async buscaUm(id: number): Promise<Produto> {
-        return this.produtos.filter(x => x.id == id)[0];
+        return this.produtoModel.findByPk(id);
     }
 
     async cria(produto: Produto): Promise<Produto> {
-        produto.id = this.produtos.length + 1;
-        this.produtos.push(produto);
-        return produto;
+        return this.produtoModel.create(produto);
     }
 
     async atualiza(id: number, produto: Produto) {
-        const produtoExistente = this.produtos.find(e => e.id == id);
-        const index: number =  this.produtos.indexOf(produtoExistente);
-        this.produtos[index] = produto;
+        this.produtoModel.update(produto, {
+            where: {
+                id: id
+            }
+        })
     }
 
     async remove(id: number) {
-        this.produtos = this.produtos.filter(x => x.id != id);
+        const produto =  await this.buscaUm(id);
+        produto.destroy();
     }
 }
